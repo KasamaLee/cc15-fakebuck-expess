@@ -1,15 +1,14 @@
 const createError = require('../utils/create-error');
 const jwt = require('jsonwebtoken');
-const prisma = require('../models/prisma')
+const prisma = require('../models/prisma');
 
 module.exports = async (req, res, next) => {
     try {
         const authorization = req.headers.authorization;
         if (!authorization || !authorization.startsWith('Bearer ')) {
-            return next(createError('unauthenticated', 401))
+            return next(createError('unauthenticated', 401));
         }
 
-        // Bearer
         const token = authorization.split(' ')[1];
         const payload = jwt.verify(token, process.env.JWT_SECRET_KEY || 'mnbvcxz');
 
@@ -19,17 +18,16 @@ module.exports = async (req, res, next) => {
             }
         });
 
-        if(!user) {
+        if (!user) {
             return next(createError('unauthenticated', 401));
         }
-
+        delete user.password;
         req.user = user;
         next();
-
     } catch (err) {
-        if(err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
-            err.statusCode(401)
+        if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+            err.statusCode = 401;
         }
-        next(err)
+        next(err);
     }
-}
+};
